@@ -23,6 +23,11 @@ class MyMessage(BaseModel):
 async def message_generator(some_url_arg: str):
     yield MyMessage(text=f"Hello, {some_url_arg}!")
     yield MyMessage(text="Another message")
+
+@app.get("/stream-list")
+@sse_handler()
+async def message_list_generator(some_url_arg: str):
+    yield [MyMessage(text=f"Hello, {some_url_arg}!"), MyMessage(text="Another message")]
 ```
 
 And on the frontend to handle:
