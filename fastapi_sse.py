@@ -85,10 +85,20 @@ def sse_response(
 
     async def event_source_wrapper():
         async for event in generator:
-            data = event.model_dump_json(exclude_none=True) if not isinstance(event, Sequence) else TypeAdapter(list[dict]).dump_json([e.model_dump(exclude_none=True) for e in event])
+            data = (
+                event.model_dump_json(exclude_none=True)
+                if not isinstance(event, Sequence)
+                else TypeAdapter(Sequence[dict])
+                .dump_json([e.model_dump(exclude_none=True) for e in event])
+                .decode('utf-8')
+            )
             message = ''
             if emit_type:
-                event_type = event.__class__.__name__ if not isinstance(event, Sequence) else event[0].__class__.__name__
+                event_type = (
+                    event.__class__.__name__
+                    if not isinstance(event, Sequence)
+                    else event[0].__class__.__name__
+                )
                 message += f'event: {event_type}\r\n'
             message += f'data: {data}\r\n'
             message += '\r\n'

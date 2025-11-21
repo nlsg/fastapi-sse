@@ -83,9 +83,9 @@ async def test_sse_sequence_response():
         events = await collect_events_data(response)
 
         assert response.status_code == 200
-        assert events[0] == dict(data='[{"message": "Test message 0-0"}, {"message": "Test message 0-1"}, {"message": "Test message 0-2"}]')
-        assert events[1] == dict(data='[{"message": "Test message 1-0"}, {"message": "Test message 1-1"}, {"message": "Test message 1-2"}]')
-        assert events[2] == dict(data='[{"message": "Test message 2-0"}, {"message": "Test message 2-1"}, {"message": "Test message 2-2"}]')
+        assert events[0] == dict(data='[{"message":"Test message 0-0"},{"message":"Test message 0-1"},{"message":"Test message 0-2"}]')
+        assert events[1] == dict(data='[{"message":"Test message 1-0"},{"message":"Test message 1-1"},{"message":"Test message 1-2"}]')
+        assert events[2] == dict(data='[{"message":"Test message 2-0"},{"message":"Test message 2-1"},{"message":"Test message 2-2"}]')
 
 
 
