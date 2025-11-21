@@ -23,11 +23,6 @@ class MyMessage(BaseModel):
 async def message_generator(some_url_arg: str):
     yield MyMessage(text=f"Hello, {some_url_arg}!")
     yield MyMessage(text="Another message")
-
-@app.get("/stream-list")
-@sse_handler()
-async def message_list_generator(some_url_arg: str):
-    yield [MyMessage(text=f"Hello, {some_url_arg}!"), MyMessage(text="Another message")]
 ```
 
 And on the frontend to handle:
@@ -60,6 +55,16 @@ eventSource.addEventListener('MyMessage', (event) => {
     const message = JSON.parse(event.data);
     console.log('Received message:', message);
 });
+```
+
+## sequences of Events
+
+```python
+@app.get("/stream-list")
+@sse_handler()
+async def message_list_generator(some_url_arg: str):
+    yield [MyMessage(text=f"Hello, {some_url_arg}!"), MyMessage(text="Another message")]
+    yield (MyMessage(test=f'some text: {i}') for i in range(3))
 ```
 
 ## Development
