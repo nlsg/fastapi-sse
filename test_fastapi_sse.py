@@ -15,6 +15,11 @@ class MyEvent(BaseModel):
     message: str
 
 
+class MyEventWithOptionals(BaseModel):
+    message: str
+    metadata: str | None
+
+
 async def emit_my_events() -> AsyncGenerator[MyEvent, Any]:
     for i in range(3):
         yield MyEvent(message=f'Test message {i}')
@@ -27,6 +32,16 @@ async def my_events_handler():
     for i in range(3):
         await asyncio.sleep(0.1)
         yield MyEvent(message=f'Test message {i}')
+
+
+@app.get('/test-stream-containing-optionals')
+@sse_handler()
+async def my_events_with_optionals_handler():
+    for i in range(3):
+        await asyncio.sleep(0.1)
+        yield MyEventWithOptionals(
+            message=f'Test message {i}', metadata='sometimes' if i == 0 else None
+        )
 
 
 @app.get('/test-stream-typed')
@@ -55,6 +70,18 @@ async def test_sse_response():
 
         assert response.status_code == 200
         assert events[0] == dict(data='{"message":"Test message 0"}')
+        assert events[1] == dict(data='{"message":"Test message 1"}')
+        assert events[2] == dict(data='{"message":"Test message 2"}')
+
+
+@pytest.mark.asyncio
+async def test_sse_response_containing_optionals():
+    async with TestClient(app) as client:
+        response = await client.get('/test-stream-containing-optionals', stream=True)
+        events = await collect_events_data(response)
+
+        assert response.status_code == 200
+        assert events[0] == dict(data='{"message":"Test message 0","metadata":"sometimes"}')
         assert events[1] == dict(data='{"message":"Test message 1"}')
         assert events[2] == dict(data='{"message":"Test message 2"}')
 
