@@ -1,7 +1,8 @@
+import json
 from functools import wraps
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
-from typing import AsyncGenerator, Awaitable, Callable, ParamSpec
+from pydantic import BaseModel, TypeAdapter
+from typing import AsyncGenerator, Awaitable, Callable, ParamSpec, Sequence
 
 
 P = ParamSpec('P')
@@ -84,10 +85,22 @@ def sse_response(
 
     async def event_source_wrapper():
         async for event in generator:
+            data = (
+                event.model_dump_json(exclude_none=True)
+                if not isinstance(event, Sequence)
+                else TypeAdapter(Sequence[dict])
+                .dump_json([e.model_dump(exclude_none=True) for e in event])
+                .decode('utf-8')
+            )
             message = ''
             if emit_type:
-                message += f'event: {event.__class__.__name__}\r\n'
-            message += f'data: {event.model_dump_json(exclude_none=True)}\r\n'
+                event_type = (
+                    event.__class__.__name__
+                    if not isinstance(event, Sequence)
+                    else event[0].__class__.__name__
+                )
+                message += f'event: {event_type}\r\n'
+            message += f'data: {data}\r\n'
             message += '\r\n'
             yield message.encode('utf-8')
 

@@ -44,6 +44,22 @@ async def my_events_with_optionals_handler():
         )
 
 
+@app.get('/test-stream-sequence')
+@sse_handler()
+async def my_events_handler_sequence():
+    for i in range(3):
+        await asyncio.sleep(0.1)
+        yield [MyEvent(message=f'Test message {i}-{j}') for j in range(3)]
+
+
+@app.get('/test-stream-typed-sequence')
+@typed_sse_handler()
+async def my_events_handler_typed_sequence():
+    for i in range(3):
+        await asyncio.sleep(0.1)
+        yield [MyEvent(message=f'Test message {i}-{j}') for j in range(3)]
+
+
 @app.get('/test-stream-typed')
 @typed_sse_handler()
 async def my_events_handler_typed():
@@ -73,6 +89,17 @@ async def test_sse_response():
         assert events[1] == dict(data='{"message":"Test message 1"}')
         assert events[2] == dict(data='{"message":"Test message 2"}')
 
+@pytest.mark.asyncio
+async def test_sse_sequence_response():
+    async with TestClient(app) as client:
+        response = await client.get('/test-stream-sequence', stream=True)
+        events = await collect_events_data(response)
+
+        assert response.status_code == 200
+        assert events[0] == dict(data='[{"message":"Test message 0-0"},{"message":"Test message 0-1"},{"message":"Test message 0-2"}]')
+        assert events[1] == dict(data='[{"message":"Test message 1-0"},{"message":"Test message 1-1"},{"message":"Test message 1-2"}]')
+        assert events[2] == dict(data='[{"message":"Test message 2-0"},{"message":"Test message 2-1"},{"message":"Test message 2-2"}]')
+
 
 @pytest.mark.asyncio
 async def test_sse_response_containing_optionals():
@@ -96,6 +123,16 @@ async def test_typed_sse_response():
         assert events[0] == dict(data='{"message":"Test message 0"}', event='MyEvent')
         assert events[1] == dict(data='{"message":"Test message 1"}', event='MyEvent')
         assert events[2] == dict(data='{"message":"Test message 2"}', event='MyEvent')
+
+
+@pytest.mark.asyncio
+async def test_typed_sequence_sse_response():
+    async with TestClient(app) as client:
+        response = await client.get('/test-stream-typed-sequence', stream=True)
+        events = await collect_events_data(response)
+
+        assert response.status_code == 200
+        assert events[0]["event"] == "MyEvent"
 
 
 @pytest.mark.asyncio
